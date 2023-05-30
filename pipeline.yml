@@ -1,0 +1,26 @@
+trigger:
+  branches:
+    include:
+      - master
+  paths:
+    include:
+      - Scripts/Cloudflare/*
+
+stages:
+  - stage: linters_review
+    condition: or(eq(variables['Build.Reason'], 'PullRequest'), eq(variables['Build.Reason'], 'Manual'))
+    displayName: Review of linters
+    jobs:
+      -job: RunPythonScript
+       displayName: Run python linters
+       pool:
+        vmImagine: 'ubuntu-lastest'
+       steps:
+       - checkout: self
+         fetchDepth: 1
+       - bash: |
+          $changedFiles = git diff --name-only origin/master $(Build.SourceBranch)
+          pip install -r requirements.txt
+          echo "variable SYSTEM_STAGENAME: $SYSTEM_STAGENAME"
+          python pipeline-scripts/linters/validateHeaders.py "$changedFiles"
+        displayName: Run validations
